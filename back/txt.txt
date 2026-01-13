@@ -1,0 +1,36 @@
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InNhY2hpbkBnbWFpbC5jb20iLCJpYXQiOjE3NjgyNDg1NzQsImV4cCI6MTc2ODMzNDk3NH0.rZrR4gMEiJdL-tOzvH4ZmPCPMdNQjzN1JhRkQcOW7T8","name":"Sachin Singh","role":"user"}
+
+
+[{"_id":"c962cb6b-50c0-421e-bd5c-8ea4853b2d6a","title":"My First Post","category":"Tech","text":"This is my first post using Postman","username":"Sachin Singh","uid":"sachin@gmail.com","likes":[],"dislikes":[],"status":"Pending","createdAt":"2026-01-12T20:12:33.080Z","updatedAt":"2026-01-12T20:12:33.080Z","__v":0}]
+
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2ODI4MDY5NSwiZXhwIjoxNzY4MzY3MDk1fQ.v9BQp4QJ-RtYSQrNJ0dqFw3GkHSS-TnwpbIAZ7atExA","name":"Admin","role":"admin"}
+
+
+
+{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFsb2tAZ21haWwuY29tIiwiaWF0IjoxNzY4MjgxMzY0LCJleHAiOjE3NjgzNjc3NjR9.p9uiAx2gcqeQC8F86DHKydq5DLFirREVT9VqQOagd0A",
+    "name": "Alok",
+    "role": "user"
+}
+
+{
+        "_id": "be6774d3-7236-41a2-b61b-2043b50dab0a",
+        "title": "Alok First Post",
+        "category": "Tech",
+        "text": "This post is created by Alok",
+        "username": "Alok",
+        "uid": "alok@gmail.com",
+        "likes": [],
+        "dislikes": [],
+        "status": "Pending",
+        "createdAt": "2026-01-13T05:19:13.670Z",
+        "updatedAt": "2026-01-13T05:19:13.670Z",
+        "__v": 0
+    }
+]
+
+{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2ODI4MTc5OCwiZXhwIjoxNzY4MzY4MTk4fQ.9p9KRPUwhVkJoZtfUpgOdyGBPlUA-6NOazCiTLFZDvY",
+    "name": "Admin",
+    "role": "admin"
+}

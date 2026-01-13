@@ -29,8 +29,8 @@ router.get("/posts/user/:uid", isLogin, postbyme);
 router.put("/posts/:id", isLogin, updatepost);
 router.delete("/posts/:id", isLogin, deletepost);
 
-router.put("/posts/like/:id", isLogin, addlike);
-router.put("/posts/dislike/:id", isLogin, dislike);
+router.put("/posts/:id/like", isLogin, addlike);
+router.put("/posts/:id/dislike", isLogin, dislike);
 
 // Admin //
 router.put("/admin/posts/:id", isLogin, isAdmin, updatepost);
