@@ -1,41 +1,52 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// 🔐 Protect routes
+// ================= PROTECT ROUTES =================
+
 exports.protect = async (req, res, next) => {
   let token;
 
-  // Check token in header
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    try {
-      // Get token
+  try {
+    // 🔍 Check for Authorization header
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
       token = req.headers.authorization.split(" ")[1];
 
-      // Verify token
+      // 🔐 Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Get user (without password)
-      req.user = await User.findById(decoded.id).select("-password");
+      // 👤 Get user (exclude password safely)
+      const user = await User.findById(decoded.id).select("-password");
 
-      next();
-    } catch (error) {
-      return res.status(401).json({ message: "Not authorized, token failed" });
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      req.user = user;
+      return next(); // ✅ IMPORTANT: stop execution here
     }
-  }
 
-  if (!token) {
+    // ❌ No token
     return res.status(401).json({ message: "No token, not authorized" });
+
+  } catch (error) {
+    console.error("AUTH ERROR:", error.message);
+    return res.status(401).json({ message: "Not authorized, token failed" });
   }
 };
 
-// 🔒 Admin Middleware
+// ================= ADMIN =================
+
 exports.admin = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    next();
-  } else {
-    return res.status(403).json({ message: "Admin access only" });
+  if (!req.user) {
+    return res.status(401).json({ message: "Not authorized" });
   }
+
+  if (req.user.role === "admin") {
+    return next();
+  }
+
+  return res.status(403).json({ message: "Admin access only" });
 };

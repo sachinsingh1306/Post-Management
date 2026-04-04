@@ -1,31 +1,39 @@
 const Post = require("../models/Post");
 
-// ✅ Create Post (User)
+// ================= CREATE POST =================
+
 exports.createPost = async (req, res) => {
   const { title, content, category } = req.body;
 
   try {
+    // 🔍 Validation
+    if (!title || !content || !category) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
     const post = await Post.create({
       user: req.user._id,
       title,
       content,
       category,
+      status: "pending", // 🔥 IMPORTANT default
     });
 
     res.status(201).json(post);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("CREATE POST ERROR:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ✅ Get Approved Posts (Public - Homepage)
+// ================= GET APPROVED POSTS =================
+
 exports.getApprovedPosts = async (req, res) => {
   try {
-    const category = req.query.category;
+    const { category } = req.query;
 
     let filter = { status: "approved" };
 
-    // if category is provided
     if (category) {
       filter.category = category;
     }
@@ -36,11 +44,13 @@ exports.getApprovedPosts = async (req, res) => {
 
     res.json(posts);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("GET APPROVED POSTS ERROR:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ✅ Get Logged-in User Posts
+// ================= GET USER POSTS =================
+
 exports.getUserPosts = async (req, res) => {
   try {
     const posts = await Post.find({ user: req.user._id }).sort({
@@ -49,14 +59,20 @@ exports.getUserPosts = async (req, res) => {
 
     res.json(posts);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("GET USER POSTS ERROR:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ✅ Admin Approve Post
+// ================= APPROVE POST =================
+
 exports.approvePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
 
     post.status = "approved";
     post.adminMessage = "";
@@ -65,45 +81,56 @@ exports.approvePost = async (req, res) => {
 
     res.json({ message: "Post approved" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("APPROVE ERROR:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ❌ Admin Reject Post
+// ================= REJECT POST =================
+
 exports.rejectPost = async (req, res) => {
   try {
     const { message } = req.body;
 
     const post = await Post.findById(req.params.id);
 
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
     post.status = "rejected";
-    post.adminMessage = message;
+    post.adminMessage = message || "Rejected by admin";
 
     await post.save();
 
     res.json({ message: "Post rejected" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("REJECT ERROR:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// 👍 Like Post
+// ================= LIKE POST =================
+
 exports.likePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
-    const userId = req.user._id;
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
 
-    // remove from dislikes if exists
+    const userId = req.user._id.toString();
+
+    // Remove from dislikes
     post.dislikes = post.dislikes.filter(
-      (id) => id.toString() !== userId.toString()
+      (id) => id.toString() !== userId
     );
 
-    // check if already liked
-    if (post.likes.includes(userId)) {
-      // remove like (toggle)
+    // Toggle like
+    if (post.likes.some((id) => id.toString() === userId)) {
       post.likes = post.likes.filter(
-        (id) => id.toString() !== userId.toString()
+        (id) => id.toString() !== userId
       );
     } else {
       post.likes.push(userId);
@@ -111,29 +138,38 @@ exports.likePost = async (req, res) => {
 
     await post.save();
 
-    res.json({ message: "Like updated", likes: post.likes.length });
+    res.json({
+      message: "Like updated",
+      likes: post.likes.length,
+      dislikes: post.dislikes.length,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("LIKE ERROR:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// 👎 Dislike Post
+// ================= DISLIKE POST =================
+
 exports.dislikePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
-    const userId = req.user._id;
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
 
-    // remove from likes if exists
+    const userId = req.user._id.toString();
+
+    // Remove from likes
     post.likes = post.likes.filter(
-      (id) => id.toString() !== userId.toString()
+      (id) => id.toString() !== userId
     );
 
-    // check if already disliked
-    if (post.dislikes.includes(userId)) {
-      // remove dislike (toggle)
+    // Toggle dislike
+    if (post.dislikes.some((id) => id.toString() === userId)) {
       post.dislikes = post.dislikes.filter(
-        (id) => id.toString() !== userId.toString()
+        (id) => id.toString() !== userId
       );
     } else {
       post.dislikes.push(userId);
@@ -143,14 +179,17 @@ exports.dislikePost = async (req, res) => {
 
     res.json({
       message: "Dislike updated",
+      likes: post.likes.length,
       dislikes: post.dislikes.length,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("DISLIKE ERROR:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// 🗑️ Delete Post (Admin)
+// ================= DELETE POST =================
+
 exports.deletePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -163,6 +202,22 @@ exports.deletePost = async (req, res) => {
 
     res.json({ message: "Post deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("DELETE ERROR:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= GET ALL POSTS (ADMIN) =================
+
+exports.getAllPosts = async (req, res) => {
+  try {
+    const posts = await Post.find()
+      .populate("user", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(posts);
+  } catch (error) {
+    console.error("GET ALL POSTS ERROR:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
