@@ -1,70 +1,131 @@
-import { v4 as uuidv4 } from "uuid";
-import postModel from "../models/postModel.js";
+import postModel from "../models/Post.js";
 
-/* ADD POST */
-export const addpost = async (req, res) => {
+/* CREATE POST */
+export const createPost = async (req, res) => {
   try {
-    const post = new postModel({ ...req.body, _id: uuidv4() });
-    await post.save();
-    res.status(201).json({ message: "Post sent for review" });
+    const { title, description, category } = req.body;
+
+    if (!title || !description || !category) {
+      return res.status(400).json({ message: "All fields required" });
+    }
+
+    const post = await postModel.create({
+      title,
+      description,
+      category,
+      author: req.user._id,
+    });
+
+    res.status(201).json({ message: "Post submitted for review", post });
   } catch (error) {
-    res.status(500).json({ message: "Error adding post" });
+    res.status(500).json({ message: "Failed to create post" });
   }
 };
 
-/* GET ALL POSTS */
-export const allpost = async (req, res) => {
-  const posts = await postModel.find();
-  res.json(posts);
+/* GET APPROVED POSTS */
+export const getApprovedPosts = async (req, res) => {
+  try {
+    const posts = await postModel
+      .find({ status: "approved" })
+      .populate("author", "name userId");
+
+    res.json(posts);
+  } catch {
+    res.status(500).json({ message: "Failed to fetch posts" });
+  }
 };
 
-/* GET ACCEPTED POSTS */
-export const getpost = async (req, res) => {
-  const posts = await postModel.find({ status: "Accepted" });
-  res.json(posts);
+/* ADMIN: GET ALL POSTS */
+export const getAllPosts = async (req, res) => {
+  try {
+    const posts = await postModel.populate("author", "name userId");
+    res.json(posts);
+  } catch {
+    res.status(500).json({ message: "Failed" });
+  }
 };
 
-/* GET POSTS BY CATEGORY */
-export const categorypost = async (req, res) => {
-  const posts = await postModel.find({
-    category: req.params.category,
-    status: "Accepted",
-  });
-  res.json(posts);
+/* POSTS BY CURRENT USER */
+export const myPosts = async (req, res) => {
+  try {
+    const posts = await postModel.find({ author: req.user._id });
+    res.json(posts);
+  } catch {
+    res.status(500).json({ message: "Failed" });
+  }
 };
 
-/* GET POSTS BY USER */
-export const postbyme = async (req, res) => {
-  const posts = await postModel.find({ uid: req.params.uid });
-  res.json(posts);
-};
-
-/* UPDATE POST */
-export const updatepost = async (req, res) => {
-  await postModel.findByIdAndUpdate(req.params.id, req.body);
-  res.json({ message: "Post Updated" });
+/* ADMIN: APPROVE POST */
+export const approvePost = async (req, res) => {
+  try {
+    await postModel.findByIdAndUpdate(req.params.id, {
+      status: "approved",
+    });
+    res.json({ message: "Post approved" });
+  } catch {
+    res.status(500).json({ message: "Failed" });
+  }
 };
 
 /* DELETE POST */
-export const deletepost = async (req, res) => {
-  await postModel.findByIdAndDelete(req.params.id);
-  res.json({ message: "Post deleted" });
+export const deletePost = async (req, res) => {
+  try {
+    const post = await postModel.findById(req.params.id);
+
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    if (
+      post.author.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    await post.deleteOne();
+    res.json({ message: "Post deleted" });
+  } catch {
+    res.status(500).json({ message: "Failed" });
+  }
 };
 
-/* LIKE POST */
-export const addlike = async (req, res) => {
-  await postModel.findByIdAndUpdate(req.params.id, {
-    $addToSet: { likes: req.headers.uid },
-    $pull: { dislikes: req.headers.uid },
-  });
-  res.json({ message: "Liked" });
+/* LIKE TOGGLE */
+export const toggleLike = async (req, res) => {
+  try {
+    const post = await postModel.findById(req.params.id);
+
+    const userId = req.user._id;
+
+    if (post.likes.includes(userId)) {
+      post.likes.pull(userId);
+    } else {
+      post.likes.push(userId);
+      post.dislikes.pull(userId);
+    }
+
+    await post.save();
+    res.json(post);
+  } catch {
+    res.status(500).json({ message: "Failed" });
+  }
 };
 
-/* DISLIKE POST */
-export const dislike = async (req, res) => {
-  await postModel.findByIdAndUpdate(req.params.id, {
-    $addToSet: { dislikes: req.headers.uid },
-    $pull: { likes: req.headers.uid },
-  });
-  res.json({ message: "Disliked" });
+/* DISLIKE TOGGLE */
+export const toggleDislike = async (req, res) => {
+  try {
+    const post = await postModel.findById(req.params.id);
+
+    const userId = req.user._id;
+
+    if (post.dislikes.includes(userId)) {
+      post.dislikes.pull(userId);
+    } else {
+      post.dislikes.push(userId);
+      post.likes.pull(userId);
+    }
+
+    await post.save();
+    res.json(post);
+  } catch {
+    res.status(500).json({ message: "Failed" });
+  }
 };

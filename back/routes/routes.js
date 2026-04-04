@@ -1,38 +1,37 @@
 import express from "express";
-import { register, login } from "../controller/userController.js";
+import { register, login } from "../controller/authController.js";
+
 import {
-  addpost,
-  allpost,
-  getpost,
-  categorypost,
-  postbyme,
-  updatepost,
-  deletepost,
-  addlike,
-  dislike,
+  createPost,
+  getApprovedPosts,
+  getAllPosts,
+  myPosts,
+  approvePost,
+  deletePost,
+  toggleLike,
+  toggleDislike,
 } from "../controller/postController.js";
-import { isLogin, isAdmin } from "../middleware/authMiddleware.js";
+
+import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Auth //
+/* AUTH */
 router.post("/auth/register", register);
 router.post("/auth/login", login);
 
-// Post //
-router.post("/posts", isLogin, addpost);
-router.get("/posts", allpost);
-router.get("/posts/accepted", getpost);
-router.get("/posts/category/:category", categorypost);
-router.get("/posts/user/:uid", isLogin, postbyme);
+/* POSTS (USER) */
+router.post("/posts", protect, createPost);
+router.get("/posts", getApprovedPosts);
+router.get("/posts/me", protect, myPosts);
 
-router.put("/posts/:id", isLogin, updatepost);
-router.delete("/posts/:id", isLogin, deletepost);
+router.put("/posts/:id/like", protect, toggleLike);
+router.put("/posts/:id/dislike", protect, toggleDislike);
 
-router.put("/posts/:id/like", isLogin, addlike);
-router.put("/posts/:id/dislike", isLogin, dislike);
+router.delete("/posts/:id", protect, deletePost);
 
-// Admin //
-router.put("/admin/posts/:id", isLogin, isAdmin, updatepost);
+/* POSTS (ADMIN) */
+router.get("/admin/posts", protect, adminOnly, getAllPosts);
+router.put("/admin/posts/:id/approve", protect, adminOnly, approvePost);
 
 export default router;

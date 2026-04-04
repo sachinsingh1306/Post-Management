@@ -1,15 +1,48 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema(
   {
-    _id: { type: String, required: true },
-    name: { type: String, required: true},
-    phone_no: { type: String },
-    pwd: { type: String, required: true },
-    role: { type: String, default: "user" },
+    userId: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+    },
+    phone_no: {
+      type: String,
+      trim: true,
+    },
+    pwd: {
+      type: String,
+      required: true,
+      minlength: 6,
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
   },
   { timestamps: true }
 );
 
-const userModel = mongoose.model("User", userSchema);
-export default userModel;
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("pwd")) return next();
+
+  const salt = await bcrypt.genSalt(10);
+  this.pwd = await bcrypt.hash(this.pwd, salt);
+  next();
+});
+
+userSchema.methods.comparePassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.pwd);
+};
+
+export default mongoose.model("User", userSchema);
