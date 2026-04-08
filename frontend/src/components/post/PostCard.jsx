@@ -55,15 +55,7 @@ function PostCard({ post }) {
             </button>
           </div>
 
-          {/* Secondary Actions */}
-          <div className="flex items-center gap-1">
-            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-              <MessageSquare size={18} />
-            </button>
-            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-              <Share2 size={18} />
-            </button>
-          </div>
+          
         </div>
       </div>
     </div>
